@@ -147,12 +147,20 @@ public class TreeManager {
 				boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 			super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row,
 					hasFocus);
-			if(((TreeNodeInformation)((DefaultMutableTreeNode)value).getUserObject()).isFolder())
+
+			Object userObject = ((DefaultMutableTreeNode)value).getUserObject(); 
+			if(userObject instanceof TreeNodeInformation)
 			{
-				setIcon(MetalIconFactory.getTreeFolderIcon());
+				if(((TreeNodeInformation)userObject).isFolder())
+				{
+					setIcon(MetalIconFactory.getTreeFolderIcon());
+				}else
+				{
+					setIcon(MetalIconFactory.getTreeLeafIcon());
+				}
 			}else
 			{
-				setIcon(MetalIconFactory.getTreeLeafIcon());
+				setIcon(MetalIconFactory.getTreeFolderIcon());
 			}
 			return this;
 		}

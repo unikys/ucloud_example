@@ -197,11 +197,31 @@ public class UcloudGUI extends JFrame{
 					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.UPLOAD_FILE , params);
 					System.out.println(result);
 				}
+			}
+		});
+		
+		
+		JButton buttonDownloadFile = new JButton("파일 다운로드");
+		toolbarButtonList.add(buttonDownloadFile);
+		buttonDownloadFile.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+
+				String folder_id = treeManager.getSelectedNode().getId();
+				boolean isFolder = treeManager.getSelectedNode().isFolder();
+				if(isFolder)
+				{
+					HashMap<String , String> params = new HashMap<String , String>();
+					params.put("folder_id", folder_id);
+					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DOWNLOAD_FILE , params);
+					System.out.println(result);
+				}
 				
 				
 			}
 		});
-		
+
 		
 		
 		
