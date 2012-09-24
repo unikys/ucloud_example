@@ -98,6 +98,9 @@ public class UcloudGUI extends JFrame{
 
 				mainPanel.add(treeManager.getTree() , BorderLayout.CENTER);
 				
+				
+				//TODO : 연결 유지하기(체크박스로 로그인 정보 저장하기) 짜보기, 연결 끊기(Logout) 짜보기
+				
 			}
 
 		});
@@ -186,6 +189,10 @@ public class UcloudGUI extends JFrame{
 						params.put("folder_id", folder_id);
 						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DELETE_FOLDER , params);
 						System.out.println(result);
+						if(apiManager.isSuccess(result))
+						{
+							treeManager.removeSelectedNode();
+						}
 					}
 				}else
 				{
@@ -244,6 +251,53 @@ public class UcloudGUI extends JFrame{
 			}
 		});
 
+		
+		JButton buttonDeleteFile = new JButton("파일 삭제");
+		toolbarButtonList.add(buttonDeleteFile);
+		buttonDeleteFile.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+
+				String file_id = treeManager.getSelectedNode().getId();
+				boolean isFolder = treeManager.getSelectedNode().isFolder();
+				if(isFolder == false)
+				{
+					//TODO : 파일 삭제 API 짜보기
+				}else
+				{
+					JOptionPane.showMessageDialog(mainPanel, "파일이 선택되지 않았습니다.");
+				}
+				
+				
+			}
+		});
+		
+		JButton buttonModifyFolder = new JButton("폴더 정보 변경");
+		toolbarButtonList.add(buttonModifyFolder);
+		buttonModifyFolder.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+
+				String folder_id = treeManager.getSelectedNode().getId();
+				boolean isFolder = treeManager.getSelectedNode().isFolder();
+				if(isFolder)
+				{
+					String newFolderName = JOptionPane.showInputDialog("변경할 폴더명을 입력하세요.");
+					if(newFolderName != null && newFolderName.isEmpty() == false)
+					{
+						//TODO : 폴더 변경 API 이용해서 짜보기
+					}else
+					{
+						JOptionPane.showMessageDialog(mainPanel, "폴더명이 잘못되었습니다.");
+					}
+				}else
+				{
+					JOptionPane.showMessageDialog(mainPanel, "폴더가 선택되지 않았습니다.");
+				}
+			}
+		});		
 		
 		
 		

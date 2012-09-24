@@ -54,6 +54,7 @@ public class TreeManager {
 			System.err.println("Error : parsing folderInfo - " + folderInfo);
 		}
 		this.addNode(id, folderId, folderName, true);
+		tree.revalidate();
 	}
 
 	public void addFileToNode(String id , org.json.JSONObject fileInfo)
@@ -67,6 +68,7 @@ public class TreeManager {
 			System.err.println("Error : parsing fileInfo - " + fileInfo);
 		}
 		this.addNode(id, fileId, fileName, false);
+		tree.revalidate();
 	}
 
 	public JScrollPane getTree()
@@ -79,6 +81,11 @@ public class TreeManager {
 		return (TreeNodeInformation)((DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent()).getUserObject();
 	}
 	
+	public void removeSelectedNode()
+	{
+		((DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent()).removeFromParent();		
+		tree.revalidate();
+	}
 	
 	public class TreeNodeInformation
 	{
