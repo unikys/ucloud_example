@@ -2,8 +2,6 @@ package com.kt.ucloud;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
-import java.awt.FlowLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -12,14 +10,9 @@ import java.util.HashMap;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
-import javax.swing.JTree;
-import javax.swing.tree.DefaultMutableTreeNode;
-
-import org.json.JSONException;
-
-
 import com.kt.ucloud.api.UcloudApiId;
 import com.kt.ucloud.api.UcloudApiManager;
 
@@ -148,11 +141,21 @@ public class UcloudGUI extends JFrame{
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder)
 				{
-					HashMap<String , String> params = new HashMap<String , String>();
-					params.put("folder_id", folder_id);
-					params.put("folder_name", "New");
-					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.CREATE_FOLDER , params);
-					System.out.println(result);
+					String newFolderName = JOptionPane.showInputDialog("새 폴더명을 입력하세요.");
+					if(newFolderName != null && newFolderName.isEmpty() == false)
+					{
+						HashMap<String , String> params = new HashMap<String , String>();
+						params.put("folder_id", folder_id);
+						params.put("folder_name", newFolderName);
+						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.CREATE_FOLDER , params);
+						System.out.println(result);
+					}else
+					{
+						JOptionPane.showMessageDialog(mainPanel, "폴더명이 잘못되었습니다.");
+					}
+				}else
+				{
+					JOptionPane.showMessageDialog(mainPanel, "폴더가 선택되지 않았습니다.");
 				}
 				
 				
@@ -166,14 +169,27 @@ public class UcloudGUI extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
+
 				String folder_id = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder)
 				{
-					HashMap<String , String> params = new HashMap<String , String>();
-					params.put("folder_id", folder_id);
-					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DELETE_FOLDER , params);
-					System.out.println(result);
+					//default icon, custom title
+					int n = JOptionPane.showConfirmDialog(
+					    mainPanel,
+					    "폴더 안에 파일이 있어도 지워집니다\n정말로 지우시겠습니까?\n",
+					    "폴더 지우기",
+					    JOptionPane.YES_NO_OPTION);
+					if(n == 0)	//YES
+					{
+						HashMap<String , String> params = new HashMap<String , String>();
+						params.put("folder_id", folder_id);
+						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DELETE_FOLDER , params);
+						System.out.println(result);
+					}
+				}else
+				{
+					JOptionPane.showMessageDialog(mainPanel, "폴더가 선택되지 않았습니다.");
 				}
 				
 				
@@ -194,8 +210,11 @@ public class UcloudGUI extends JFrame{
 				{
 					HashMap<String , String> params = new HashMap<String , String>();
 					params.put("folder_id", folder_id);
-					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.UPLOAD_FILE , params);
-					System.out.println(result);
+//					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.UPLOAD_FILE , params);
+//					System.out.println(result);
+				}else
+				{
+					JOptionPane.showMessageDialog(mainPanel, "폴더가 선택되지 않았습니다.");
 				}
 			}
 		});
@@ -210,12 +229,15 @@ public class UcloudGUI extends JFrame{
 
 				String folder_id = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
-				if(isFolder)
+				if(isFolder == false)
 				{
 					HashMap<String , String> params = new HashMap<String , String>();
 					params.put("folder_id", folder_id);
-					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DOWNLOAD_FILE , params);
-					System.out.println(result);
+//					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DOWNLOAD_FILE , params);
+//					System.out.println(result);
+				}else
+				{
+					JOptionPane.showMessageDialog(mainPanel, "파일이 선택되지 않았습니다.");
 				}
 				
 				

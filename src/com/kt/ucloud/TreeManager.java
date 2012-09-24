@@ -1,8 +1,6 @@
 package com.kt.ucloud;
 
 import java.awt.Component;
-import java.util.HashMap;
-
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.plaf.metal.MetalIconFactory;
@@ -125,14 +123,6 @@ public class TreeManager {
 		}
 	}
 	
-	public class CustomTreeModel extends DefaultTreeModel
-	{
-
-		public CustomTreeModel(TreeNode root, boolean asksAllowsChildren) {
-			super(root, asksAllowsChildren);
-		}
-		
-	}
 	
 	public class TreeFolderCellRenderer extends DefaultTreeCellRenderer
 	{
