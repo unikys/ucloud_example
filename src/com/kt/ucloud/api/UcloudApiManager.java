@@ -60,13 +60,7 @@ public class UcloudApiManager {
 	{
 		String redirectUrl = result.get("redirect_url").toString();
 		String fileToken = result.get("file_token").toString();
-		return getFullURL(redirectUrl , fileToken);
-	}
-	
-	public String getFullURL(String redirectUrl, String fileToken)
-	{
 		String apiToken = apiHandler.makeApiToken();
 		return redirectUrl + "?api_token=" + apiToken + "&file_token=" + fileToken;
 	}
-
 }

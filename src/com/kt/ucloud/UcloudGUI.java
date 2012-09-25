@@ -7,9 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +22,6 @@ import javax.swing.JToolBar;
 import javax.swing.filechooser.FileFilter;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
@@ -118,7 +115,6 @@ public class UcloudGUI extends JFrame{
 
 				mainPanel.add(treeManager.getTree() , BorderLayout.CENTER);
 				
-				
 				//TODO : 연결 유지하기(체크박스로 로그인 정보 저장하기) 짜보기, 연결 끊기(Logout) 짜보기
 				
 			}
@@ -134,7 +130,7 @@ public class UcloudGUI extends JFrame{
 
 				String folderId = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
-				System.out.println("Selected node : " + folderId + " , " + isFolder);
+
 				if(isFolder)
 				{
 					HashMap<String , String> params = new HashMap<String , String>();
@@ -142,7 +138,6 @@ public class UcloudGUI extends JFrame{
 					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.GET_CONTENTS, params);
 					if(apiManager.isSuccess(result))
 					{
-						System.out.println(result + " \n " + result.get("Folders") + " \n "+ result.get("Files"));
 						setTreeInfo(folderId , result.get("Folders") , result.get("Files"));
 						setStatus("정보 읽기 완료");
 					}else
@@ -171,14 +166,13 @@ public class UcloudGUI extends JFrame{
 						params.put("folder_id", folderId);
 						params.put("folder_name", newFolderName);
 						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.CREATE_FOLDER , params);
-						System.out.println(result);
 					}else
 					{
 						JOptionPane.showMessageDialog(mainPanel, "폴더명이 잘못되었습니다.");
 					}
 				}else
 				{
-					JOptionPane.showMessageDialog(mainPanel, "폴더가 선택되지 않았습니다.");
+					JOptionPane.showMessageDialog(null, "폴더가 선택되지 않았습니다.");
 				}
 				
 				
@@ -208,7 +202,6 @@ public class UcloudGUI extends JFrame{
 						HashMap<String , String> params = new HashMap<String , String>();
 						params.put("folder_id", folderId);
 						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DELETE_FOLDER , params);
-						System.out.println(result);
 						if(apiManager.isSuccess(result))
 						{
 							treeManager.removeSelectedNode();
@@ -219,8 +212,6 @@ public class UcloudGUI extends JFrame{
 				{
 					JOptionPane.showMessageDialog(mainPanel, "폴더가 선택되지 않았습니다.");
 				}
-				
-				
 			}
 		});
 
@@ -240,7 +231,7 @@ public class UcloudGUI extends JFrame{
 					JFileChooser fileChooseDialog = new JFileChooser();
 					fileChooseDialog.setAcceptAllFileFilterUsed(false);
 					fileChooseDialog.addChoosableFileFilter(new FileFilter() {
-						
+
 						@Override
 						public String getDescription() {
 							return "image/jpg";
@@ -265,7 +256,6 @@ public class UcloudGUI extends JFrame{
 					                    return true;
 					            }
 				            }
-					 
 					        return false;						
 						}
 					});
@@ -302,6 +292,7 @@ public class UcloudGUI extends JFrame{
 
 							result = apiManager.apiCall(UcloudApiId.CREATE_FILE_TOKEN , params);
 
+							//3. send file through httpclient
 							String putUrl = apiManager.getFullURL(result);
 							
 							FileInputStream fis = new FileInputStream(selectedFile);
@@ -315,26 +306,15 @@ public class UcloudGUI extends JFrame{
 							HttpPut putRequest = new HttpPut(putUrl);
 							
 							ByteArrayEntity bae = new ByteArrayEntity(fileData);
-							System.out.println("BAE size : " + fileData.length);
 							putRequest.setEntity(bae);
 							
 							HttpResponse response = httpClient.execute(putRequest);
-							
-							if(response.getStatusLine().getStatusCode() < 300)
-							{
-								setStatus("파일 업로드 완료");
-							}else
-							{
-								setStatus("파일 업로드 실패");
-							}
+
+							fis.close();
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-					}else
-					{
-						setStatus("파일 업로드 취소");
 					}
-				
 				}else
 				{
 					JOptionPane.showMessageDialog(mainPanel, "폴더가 선택되지 않았습니다.");
@@ -355,7 +335,6 @@ public class UcloudGUI extends JFrame{
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder == false)
 				{
-					
 					JFileChooser fileChooseDialog = new JFileChooser();
 					
 					fileChooseDialog.setName(fileName);
@@ -365,7 +344,6 @@ public class UcloudGUI extends JFrame{
 					
 					if(returnVal == JFileChooser.APPROVE_OPTION)
 					{
-						
 						File file = fileChooseDialog.getSelectedFile();
 	
 					    if(file.exists()){
@@ -374,13 +352,16 @@ public class UcloudGUI extends JFrame{
 					        {
 					        	return;
 					        }
-					    }						
+					    }
+
+					    //1. request token to download file from a file on ucloud
 						HashMap<String , String> params = new HashMap<String , String>();
 						params.put("file_id", fileId);
 						params.put("transfer_mode" , "DN");
 						
 						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.CREATE_FILE_TOKEN , params);
 	
+						//2. download file from ucloud through httpclient
 						String getUrl = apiManager.getFullURL(result);
 						
 						HttpClient httpClient = new DefaultHttpClient();
@@ -407,9 +388,7 @@ public class UcloudGUI extends JFrame{
 								is.close();
 								out.flush();
 								out.close();
-								
 							}
-							
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -418,8 +397,6 @@ public class UcloudGUI extends JFrame{
 				{
 					JOptionPane.showMessageDialog(mainPanel, "파일이 선택되지 않았습니다.");
 				}
-				
-				
 			}
 		});
 
@@ -431,17 +408,16 @@ public class UcloudGUI extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
-				String file_id = treeManager.getSelectedNode().getId();
+				String fileId = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder == false)
 				{
 					//TODO : 파일 삭제 API 짜보기
+					JOptionPane.showMessageDialog(mainPanel, "구현하세요.");
 				}else
 				{
 					JOptionPane.showMessageDialog(mainPanel, "파일이 선택되지 않았습니다.");
 				}
-				
-				
 			}
 		});
 		
@@ -452,7 +428,7 @@ public class UcloudGUI extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
-				String folder_id = treeManager.getSelectedNode().getId();
+				String folderId = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder)
 				{
@@ -460,6 +436,7 @@ public class UcloudGUI extends JFrame{
 					if(newFolderName != null && newFolderName.isEmpty() == false)
 					{
 						//TODO : 폴더 변경 API 이용해서 짜보기
+						JOptionPane.showMessageDialog(mainPanel, "구현하세요.");
 					}else
 					{
 						JOptionPane.showMessageDialog(mainPanel, "폴더명이 잘못되었습니다.");
@@ -494,18 +471,18 @@ public class UcloudGUI extends JFrame{
 	{
 		for(org.json.JSONObject folderInfo : (ArrayList<org.json.JSONObject>)folders)
 		{
-			this.treeManager.addFolderToNode(id , folderInfo);
+			this.treeManager.addNewNodeToNode(id , folderInfo , true);
 		}
 		for(org.json.JSONObject fileInfo : (ArrayList<org.json.JSONObject>)files)
 		{
-			this.treeManager.addFileToNode(id , fileInfo);
+			this.treeManager.addNewNodeToNode(id , fileInfo, false);
 		}
 	}
 	
 	public void setTreeRootInfo(Object folders) {
 		for(org.json.JSONObject folderInfo : (ArrayList<org.json.JSONObject>)folders)
 		{
-			this.treeManager.addFolderToNode(null , folderInfo);
+			this.treeManager.addNewNodeToNode(null , folderInfo , true);
 		}
 	}
 	

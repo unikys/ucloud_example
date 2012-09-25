@@ -6,9 +6,6 @@ import javax.swing.JTree;
 import javax.swing.plaf.metal.MetalIconFactory;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-
 import org.json.JSONException;
 
 public class TreeManager {
@@ -43,31 +40,24 @@ public class TreeManager {
 		
 	}
 	
-	public void addFolderToNode(String id , org.json.JSONObject folderInfo)
+	public void addNewNodeToNode(String parentId , org.json.JSONObject folderInfo, boolean isFolder)
 	{
-		String folderName = "" , folderId = "";
+		String name = "" , id = "";
 		try {
-			folderName = folderInfo.getString("folder_name");
-			folderId = folderInfo.getString("folder_id");
+			if(isFolder)
+			{
+				name = folderInfo.getString("folder_name");
+				id = folderInfo.getString("folder_id");
+			}else
+			{
+				name = folderInfo.getString("file_name");
+				id = folderInfo.getString("file_id");				
+			}
 		} catch (JSONException e) {
 			e.printStackTrace();
 			System.err.println("Error : parsing folderInfo - " + folderInfo);
 		}
-		this.addNode(id, folderId, folderName, true);
-		tree.revalidate();
-	}
-
-	public void addFileToNode(String id , org.json.JSONObject fileInfo)
-	{
-		String fileName = "" , fileId = "";
-		try {
-			fileName = fileInfo.getString("file_name");
-			fileId = fileInfo.getString("file_id");
-		} catch (JSONException e) {
-			e.printStackTrace();
-			System.err.println("Error : parsing fileInfo - " + fileInfo);
-		}
-		this.addNode(id, fileId, fileName, false);
+		this.addNode(parentId, id, name, isFolder);
 		tree.revalidate();
 	}
 
@@ -87,6 +77,7 @@ public class TreeManager {
 		tree.revalidate();
 	}
 	
+	//트리의 노드가 가지고 있을 정보는 id, name, isFolder
 	public class TreeNodeInformation
 	{
 		private String id;
@@ -130,7 +121,7 @@ public class TreeManager {
 		}
 	}
 	
-	
+	//빈 폴더는 isLeaf() == true 이기 때문에 폴더모양 아이콘으로 바뀌주기 위함
 	public class TreeFolderCellRenderer extends DefaultTreeCellRenderer
 	{
 
