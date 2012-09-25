@@ -57,5 +57,11 @@ public class UcloudApiManager {
 	{
 		return Integer.valueOf((String)result.get("result_code")) < 300;
 	}
+	
+	public String getFullURL(String redirectUrl, String fileToken)
+	{
+		String apiToken = apiHandler.makeApiToken();
+		return redirectUrl + "?api_token=" + apiToken + "&file_token=" + fileToken;
+	}
 
 }

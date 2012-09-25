@@ -1,18 +1,30 @@
 package com.kt.ucloud;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 import com.kt.ucloud.api.UcloudApiId;
 import com.kt.ucloud.api.UcloudApiManager;
 
@@ -35,7 +47,7 @@ public class UcloudGUI extends JFrame{
 		
 		this.apiManager = manager;
 		
-		setBounds(100,100,500,500);
+		setBounds(100,100,700,500);
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -63,6 +75,7 @@ public class UcloudGUI extends JFrame{
 		paneStatusBar.add(labelStatus , BorderLayout.WEST);
 		paneStatusBar.add(labelStatusBar , BorderLayout.CENTER);
 		paneStatusBar.add(labelUser, BorderLayout.EAST);
+		paneStatusBar.setBackground(Color.LIGHT_GRAY);
 		
 		mainPanel.add(paneStatusBar , BorderLayout.SOUTH);		
 	}
@@ -140,7 +153,7 @@ public class UcloudGUI extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
-				String folder_id = treeManager.getSelectedNode().getId();
+				String folderId = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder)
 				{
@@ -148,7 +161,7 @@ public class UcloudGUI extends JFrame{
 					if(newFolderName != null && newFolderName.isEmpty() == false)
 					{
 						HashMap<String , String> params = new HashMap<String , String>();
-						params.put("folder_id", folder_id);
+						params.put("folder_id", folderId);
 						params.put("folder_name", newFolderName);
 						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.CREATE_FOLDER , params);
 						System.out.println(result);
@@ -173,7 +186,7 @@ public class UcloudGUI extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 
 
-				String folder_id = treeManager.getSelectedNode().getId();
+				String folderId = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder)
 				{
@@ -186,12 +199,13 @@ public class UcloudGUI extends JFrame{
 					if(n == 0)	//YES
 					{
 						HashMap<String , String> params = new HashMap<String , String>();
-						params.put("folder_id", folder_id);
+						params.put("folder_id", folderId);
 						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DELETE_FOLDER , params);
 						System.out.println(result);
 						if(apiManager.isSuccess(result))
 						{
 							treeManager.removeSelectedNode();
+							setStatus("폴더 지우기 완료");
 						}
 					}
 				}else
@@ -211,12 +225,76 @@ public class UcloudGUI extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
-				String folder_id = treeManager.getSelectedNode().getId();
+				String folderId = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder)
 				{
-					HashMap<String , String> params = new HashMap<String , String>();
-					params.put("folder_id", folder_id);
+					
+					JFileChooser fileChooseDialog = new JFileChooser();
+
+					//In response to a button click:
+					int returnVal = fileChooseDialog.showOpenDialog(mainPanel);
+					
+					if(returnVal == JFileChooser.APPROVE_OPTION)
+					{
+
+						
+						
+						
+						try {
+							File selectedFile = fileChooseDialog.getSelectedFile();
+
+							//1. create dummy file on ucloud
+							HashMap<String , String> params = new HashMap<String , String>();
+							params.put("folder_id", folderId);
+							
+							//Need to check file type
+							params.put("mediaType" , "image/jpeg");
+							
+							params.put("file_name", selectedFile.getName());
+							
+							HashMap<?,?> result = apiManager.apiCall(UcloudApiId.CREATE_FILE , params);
+							String fileId = result.get("file_id").toString();
+							
+							setStatus("파일 ID 생성 완료");
+							
+
+							//2. request token to upload file on dummy file on ucloud
+							params.clear();
+							params.put("file_id", fileId);
+							params.put("transfer_mode", "UP");
+
+							result = apiManager.apiCall(UcloudApiId.CREATE_FILE_TOKEN , params);
+
+							String redirectUrl = result.get("redirect_url").toString();
+							String fileToken = result.get("file_token").toString();
+							String putUrl = apiManager.getFullURL(redirectUrl, fileToken);
+							
+							FileInputStream fis = new FileInputStream(selectedFile);
+						
+							byte[] fileData = new byte[(int)selectedFile.length()];
+							
+							fis.read(fileData);
+							
+							HttpClient httpClient = new DefaultHttpClient();
+							
+							HttpPut putRequest = new HttpPut(putUrl);
+							
+							ByteArrayEntity bae = new ByteArrayEntity(fileData);
+							System.out.println("BAE size : " + fileData.length);
+							putRequest.setEntity(bae);
+							
+							HttpResponse response = httpClient.execute(putRequest);
+							
+							//need to check process success
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}else
+					{
+						setStatus("파일 업로드 취소");
+					}
+				
 //					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.UPLOAD_FILE , params);
 //					System.out.println(result);
 				}else
@@ -234,12 +312,12 @@ public class UcloudGUI extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
-				String folder_id = treeManager.getSelectedNode().getId();
+				String folderId = treeManager.getSelectedNode().getId();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder == false)
 				{
 					HashMap<String , String> params = new HashMap<String , String>();
-					params.put("folder_id", folder_id);
+					params.put("folder_id", folderId);
 //					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DOWNLOAD_FILE , params);
 //					System.out.println(result);
 				}else
