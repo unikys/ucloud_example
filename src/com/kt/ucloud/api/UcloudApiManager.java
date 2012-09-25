@@ -15,7 +15,6 @@ public class UcloudApiManager {
 	{
 		this.strAuthKey = authKey;
 		this.strAuthSecret = authSecret;
-		
 	}
 	
 	public KTOpenApiHandler getHandler()
@@ -32,7 +31,6 @@ public class UcloudApiManager {
 			return false;
 		}
 		return true;
-		
 	}
 
 	public HashMap<?,?> apiCall(String api_id) {
@@ -43,7 +41,7 @@ public class UcloudApiManager {
 		
 		// https
 		boolean bSSL = false;
-							
+
 		if(apiHandler == null && this.connect() == false) {
 			return null;
 		} 
@@ -56,6 +54,13 @@ public class UcloudApiManager {
 	public boolean isSuccess(HashMap<? , ?> result)
 	{
 		return Integer.valueOf((String)result.get("result_code")) < 300;
+	}
+	
+	public String getFullURL(HashMap<?,?> result)
+	{
+		String redirectUrl = result.get("redirect_url").toString();
+		String fileToken = result.get("file_token").toString();
+		return getFullURL(redirectUrl , fileToken);
 	}
 	
 	public String getFullURL(String redirectUrl, String fileToken)

@@ -8,6 +8,9 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -18,10 +21,14 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import javax.swing.filechooser.FileFilter;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.conn.BasicManagedEntity;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
@@ -218,7 +225,7 @@ public class UcloudGUI extends JFrame{
 		});
 
 		
-		JButton buttonUploadFile = new JButton("파일 업로드");
+		JButton buttonUploadFile = new JButton("이미지 업로드");
 		toolbarButtonList.add(buttonUploadFile);
 		buttonUploadFile.addActionListener(new ActionListener() {
 			
@@ -231,15 +238,44 @@ public class UcloudGUI extends JFrame{
 				{
 					
 					JFileChooser fileChooseDialog = new JFileChooser();
+					fileChooseDialog.setAcceptAllFileFilterUsed(false);
+					fileChooseDialog.addChoosableFileFilter(new FileFilter() {
+						
+						@Override
+						public String getDescription() {
+							return "image/jpg";
+						}
+						
+						@Override
+						public boolean accept(File f) {
+					        if (f.isDirectory()) {
+					            return true;
+					        }
+					 
+				            String ext = null;
+				            String s = f.getName();
+				            int i = s.lastIndexOf('.');
+				     
+				            if (i > 0 &&  i < s.length() - 1) {
+				                ext = s.substring(i+1).toLowerCase();
+					            if (ext.equals("jpeg") ||
+					            		ext.equals("jpg") ||
+					            		ext.equals("gif") ||
+					            		ext.equals("png")) {
+					                    return true;
+					            }
+				            }
+					 
+					        return false;						
+						}
+					});
+					
 
 					//In response to a button click:
 					int returnVal = fileChooseDialog.showOpenDialog(mainPanel);
 					
 					if(returnVal == JFileChooser.APPROVE_OPTION)
 					{
-
-						
-						
 						
 						try {
 							File selectedFile = fileChooseDialog.getSelectedFile();
@@ -266,9 +302,7 @@ public class UcloudGUI extends JFrame{
 
 							result = apiManager.apiCall(UcloudApiId.CREATE_FILE_TOKEN , params);
 
-							String redirectUrl = result.get("redirect_url").toString();
-							String fileToken = result.get("file_token").toString();
-							String putUrl = apiManager.getFullURL(redirectUrl, fileToken);
+							String putUrl = apiManager.getFullURL(result);
 							
 							FileInputStream fis = new FileInputStream(selectedFile);
 						
@@ -286,7 +320,13 @@ public class UcloudGUI extends JFrame{
 							
 							HttpResponse response = httpClient.execute(putRequest);
 							
-							//need to check process success
+							if(response.getStatusLine().getStatusCode() < 300)
+							{
+								setStatus("파일 업로드 완료");
+							}else
+							{
+								setStatus("파일 업로드 실패");
+							}
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -295,8 +335,6 @@ public class UcloudGUI extends JFrame{
 						setStatus("파일 업로드 취소");
 					}
 				
-//					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.UPLOAD_FILE , params);
-//					System.out.println(result);
 				}else
 				{
 					JOptionPane.showMessageDialog(mainPanel, "폴더가 선택되지 않았습니다.");
@@ -312,14 +350,70 @@ public class UcloudGUI extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 
-				String folderId = treeManager.getSelectedNode().getId();
+				String fileId = treeManager.getSelectedNode().getId();
+				String fileName = treeManager.getSelectedNode().getName();
 				boolean isFolder = treeManager.getSelectedNode().isFolder();
 				if(isFolder == false)
 				{
-					HashMap<String , String> params = new HashMap<String , String>();
-					params.put("folder_id", folderId);
-//					HashMap<?,?> result = apiManager.apiCall(UcloudApiId.DOWNLOAD_FILE , params);
-//					System.out.println(result);
+					
+					JFileChooser fileChooseDialog = new JFileChooser();
+					
+					fileChooseDialog.setName(fileName);
+					
+					//In response to a button click:
+					int returnVal = fileChooseDialog.showSaveDialog(mainPanel);
+					
+					if(returnVal == JFileChooser.APPROVE_OPTION)
+					{
+						
+						File file = fileChooseDialog.getSelectedFile();
+	
+					    if(file.exists()){
+					        int result = JOptionPane.showConfirmDialog(mainPanel,"The file exists, overwrite?","Existing file",JOptionPane.YES_NO_CANCEL_OPTION);
+					        if(result != JOptionPane.YES_OPTION)
+					        {
+					        	return;
+					        }
+					    }						
+						HashMap<String , String> params = new HashMap<String , String>();
+						params.put("file_id", fileId);
+						params.put("transfer_mode" , "DN");
+						
+						HashMap<?,?> result = apiManager.apiCall(UcloudApiId.CREATE_FILE_TOKEN , params);
+	
+						String getUrl = apiManager.getFullURL(result);
+						
+						HttpClient httpClient = new DefaultHttpClient();
+						
+						HttpGet getRequest = new HttpGet(getUrl);
+						
+						try {
+							HttpResponse response = httpClient.execute(getRequest);
+							
+							if(200 == response.getStatusLine().getStatusCode())
+							{
+								FileOutputStream out = new FileOutputStream(file);
+								BasicManagedEntity entity = (BasicManagedEntity) response.getEntity();
+								InputStream is = entity.getContent();
+								
+								byte[] buffer = new byte[1024];
+								int bufferLength = 0;
+								
+								while((bufferLength = is.read(buffer)) > 0)
+								{
+									out.write(buffer , 0 , bufferLength);
+								}
+								
+								is.close();
+								out.flush();
+								out.close();
+								
+							}
+							
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
 				}else
 				{
 					JOptionPane.showMessageDialog(mainPanel, "파일이 선택되지 않았습니다.");
