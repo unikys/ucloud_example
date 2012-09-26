@@ -6,6 +6,8 @@ import javax.swing.JTree;
 import javax.swing.plaf.metal.MetalIconFactory;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
+
 import org.json.JSONException;
 
 public class TreeManager {
@@ -73,7 +75,9 @@ public class TreeManager {
 	
 	public void removeSelectedNode()
 	{
-		((DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent()).removeFromParent();		
+		DefaultTreeModel model = ((DefaultTreeModel)tree.getModel());
+		DefaultMutableTreeNode node = ((DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent()); 
+		model.removeNodeFromParent(node);
 		tree.revalidate();
 	}
 	
@@ -154,4 +158,10 @@ public class TreeManager {
 		}
 	}
 
+	public void removeSubTree() {
+		DefaultTreeModel model = ((DefaultTreeModel)tree.getModel());
+		DefaultMutableTreeNode node = ((DefaultMutableTreeNode)tree.getSelectionPath().getLastPathComponent());
+		node.removeAllChildren();
+		model.reload(node);
+	}
 }

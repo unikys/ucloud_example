@@ -106,7 +106,7 @@ public class UcloudGUI extends JFrame{
 					setStatus("Error when connecting");
 				}
 				HashMap<?,?> result = apiManager.apiCall(UcloudApiId.GET_USER_INFO);
-
+System.out.println(result);
 				String userName = (String)result.get("userName");
 				setUser(userName);
 				treeManager = new TreeManager(userName);
@@ -174,8 +174,6 @@ public class UcloudGUI extends JFrame{
 				{
 					JOptionPane.showMessageDialog(null, "폴더가 선택되지 않았습니다.");
 				}
-				
-				
 			}
 		});
 
@@ -400,7 +398,7 @@ public class UcloudGUI extends JFrame{
 			}
 		});
 
-		
+		/*
 		JButton buttonDeleteFile = new JButton("파일 삭제");
 		toolbarButtonList.add(buttonDeleteFile);
 		buttonDeleteFile.addActionListener(new ActionListener() {
@@ -447,8 +445,7 @@ public class UcloudGUI extends JFrame{
 				}
 			}
 		});		
-		
-		
+		*/
 		
 		for(JButton button : toolbarButtonList)
 			toolbar.add(button);
@@ -469,6 +466,7 @@ public class UcloudGUI extends JFrame{
 	
 	public void setTreeInfo(String id , Object folders , Object files)
 	{
+		this.treeManager.removeSubTree();
 		for(org.json.JSONObject folderInfo : (ArrayList<org.json.JSONObject>)folders)
 		{
 			this.treeManager.addNewNodeToNode(id , folderInfo , true);
